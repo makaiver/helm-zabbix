@@ -96,6 +96,8 @@ spec:
           env:
             - name: ZBX_START_POLLERS
               value: {{ .Values.zabbixJavaGateway.ZBX_START_POLLERS | quote }}
+            - name: ZBX_SERVER
+              value: {{ .Values.zabbixJavaGateway.ZBX_SERVER | quote }}
             - name: ZBX_DEBUGLEVEL
               value: {{ .Values.zabbixJavaGateway.ZBX_DEBUGLEVEL | quote }}
             - name: ZBX_TIMEOUT

@@ -543,6 +543,8 @@ The following tables lists the configurable parameters of the chart and their de
 | zabbixJavaGateway.ZBX_DEBUGLEVEL | int | `3` | The variable is used to specify debug level, from 0 to 5 |
 | zabbixJavaGateway.ZBX_JAVAGATEWAY | string | `"zabbix-java-gateway"` |  |
 | zabbixJavaGateway.ZBX_PROPERTIES_FILE | string | `""` | Name of properties file. Can be used to set additional properties using a key-value format in such a way that they are not visible on a command line or to overwrite existing ones. |
+| zabbixJavaGateway.ZBX_SERVER | string | `"0.0.0.0/0,::/0"` | Hosts allowed to connect to Zabbix Java Gateway: comma separated IPs, CIDRs or DNS names. If empty, Zabbix 8.0 images allow only 127.0.0.1,::1 and 6.0/7.0/7.4 images built since mid-2026 allow any host; older images ignore ZBX_SERVER. The default lets any client that reaches port 10052 use the gateway: set it to your cluster's pod CIDR or add a NetworkPolicy, and do not expose the gateway Service as NodePort or LoadBalancer with this default |
+| zabbixJavaGateway.ZBX_STARTJAVAPOLLERS | int | `5` | Number of Java pollers started by Zabbix Server (``StartJavaPollers``). Needed by current Zabbix 7.4 and 8.0 images, whose config check fails on an empty value; Zabbix 7.0 images use 5 when it is empty |
 | zabbixJavaGateway.ZBX_START_POLLERS | int | `5` | This variable is specified amount of pollers. By default, value is 5 |
 | zabbixJavaGateway.ZBX_TIMEOUT | int | `3` | This variable is used to specify timeout for outgoing connections. By default, value is 3. |
 | zabbixJavaGateway.enabled | bool | `false` | Enables use of **Zabbix Java Gateway** |
