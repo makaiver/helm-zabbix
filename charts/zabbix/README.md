@@ -684,7 +684,7 @@ The following tables lists the configurable parameters of the chart and their de
 | zabbixServer.zabbixServerHA.dbCreateUpgradeJob.image.pullPolicy | string | `"IfNotPresent"` | Pull policy for the db initialization / upgrade job |
 | zabbixServer.zabbixServerHA.dbCreateUpgradeJob.image.pullSecrets | list | `[]` | Pull secrets for the db initialization / upgrade job |
 | zabbixServer.zabbixServerHA.dbCreateUpgradeJob.image.repository | string | `"ghcr.io/zabbix-community/zabbix-server-create-upgrade-db"` | Image repository for the database initialization / upgrade job |
-| zabbixServer.zabbixServerHA.dbCreateUpgradeJob.image.tag | string | `""` | it is going to be chosen based of the zabbix_server pod container otherwise |
+| zabbixServer.zabbixServerHA.dbCreateUpgradeJob.image.tag | string | `""` | Tag of the image to use for the dbCreateUpgradeJob. Don't override this if you don't have a specific reason. It is going to be chosen based of the zabbix_server pod container otherwise. Must be set if the Zabbix Server image tag has no release in it, e.g. trunk images (see [Zabbix 8.0 LTS](#zabbix-80-lts)) |
 | zabbixServer.zabbixServerHA.dbCreateUpgradeJob.image.tagSuffix | string | `"20261009150714"` | The tag suffix used for the dbCreateUpgradeJob's image when not explicitly specifying a tag for the image. The tag name will be concatenated with major release of zabbix_server image if specified |
 | zabbixServer.zabbixServerHA.dbCreateUpgradeJob.resources | object | `{}` | Resource requests and limits for the dbCreateUpgradeJob pod |
 | zabbixServer.zabbixServerHA.dbCreateUpgradeJob.securityContext | object | `{}` | Security Context configurations. Reference: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/ |

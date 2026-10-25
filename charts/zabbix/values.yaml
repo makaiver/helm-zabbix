@@ -99,7 +99,8 @@ zabbixServer:
         # -- Image repository for the database initialization / upgrade job
         repository: ghcr.io/zabbix-community/zabbix-server-create-upgrade-db
         # -- Tag of the image to use for the dbCreateUpgradeJob. Don't override this if you don't have a specific reason.
-        # -- it is going to be chosen based of the zabbix_server pod container otherwise
+        # It is going to be chosen based of the zabbix_server pod container otherwise. Must be set if the Zabbix Server image tag
+        # has no release in it, e.g. trunk images (see [Zabbix 8.0 LTS](#zabbix-80-lts))
         tag: ""
         # -- The tag suffix used for the dbCreateUpgradeJob's image when not explicitly specifying a tag for the image. The tag name will be concatenated with major release of zabbix_server image if specified
         tagSuffix: "20261009150714"

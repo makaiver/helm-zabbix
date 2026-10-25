@@ -65,7 +65,7 @@ spec:
           {{- end }}
         {{- end }}
         {{- if eq $tag "" }}
-          {{- fail "Failed to generate tag: Ensure the input values match the expected pattern." -}}
+          {{- fail (printf "Failed to generate the dbCreateUpgradeJob image tag: no Zabbix release (e.g. 7.0) found in the Zabbix Server image tag %q. For images without a release in their tag (e.g. ubuntu-trunk), set zabbixServer.zabbixServerHA.dbCreateUpgradeJob.image.tag" (.Values.zabbixServer.image.tag | default .Values.zabbixImageTag)) -}}
         {{- else }}
         image: "{{ .Values.zabbixServer.zabbixServerHA.dbCreateUpgradeJob.image.repository }}:{{ $tag }}"
         {{- end }}
