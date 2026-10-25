@@ -275,7 +275,9 @@ postgresql:
     # -- Postgresql Docker image name: chose one of "postgres" or "timescale/timescaledb"
     repository: postgres
     # -- Tag of Docker image of Postgresql server, choice "16" for postgres "2.17.2-pg16" for timescaledb
-    # (Zabbix supports TimescaleDB. More info: https://www.zabbix.com/documentation/7.0/en/manual/installation/requirements)
+    # (Zabbix supports TimescaleDB. More info: https://www.zabbix.com/documentation/7.0/en/manual/installation/requirements).
+    # Zabbix 8.0 needs PostgreSQL 15.0-18.x and TimescaleDB 2.20.x-2.29.x, so "2.17.2-pg16" is too old for Zabbix 8.0
+    # (More info: https://www.zabbix.com/documentation/8.0/en/manual/installation/requirements)
     tag: 16
     # -- Pull policy of Docker image
     pullPolicy: IfNotPresent

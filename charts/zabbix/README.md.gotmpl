@@ -44,6 +44,7 @@ This Helm chart installs [Zabbix](https://www.zabbix.com) in a Kubernetes cluste
   - [Native Zabbix Server High Availability](#native-zabbix-server-high-availability)
   - [Expose Zabbix service](#expose-zabbix-service)
   - [Multiple replicas for Zabbix Proxy statefulset](#multiple-replicas-for-zabbix-proxy-statefulset)
+  - [Zabbix 8.0 LTS](#zabbix-80-lts)
 
 <!-- TOC -->
 
@@ -299,6 +300,7 @@ possible is possible, while still obtaining a good level of security.
 - But by default this helm chart will install the latest LTS version (example: 7.0.x). 
 See more info in [Zabbix Life Cycle & Release Policy](https://www.zabbix.com/life_cycle_and_release_policy) page
 - When you want use a non-LTS version (example: 7.4.x), you have to set this in ``values.yaml`` yourself. This Helm Chart is actively being tested with the current non-LTS major releases, so it will be most probably working without any problem just setting `zabbixImageTag`, for example to the value of `ubuntu-7.4.0` or `alpine-7.4-latest`.
+- To use the release candidates of the upcoming Zabbix 8.0 LTS, see [Zabbix 8.0 LTS](#zabbix-80-lts).
 
 ## Zabbix Server
 
@@ -487,3 +489,42 @@ Name that you can then give to your zabbix proxies on the zabbix server side.
 > [!IMPORTANT]
 > You will need to deploy proxy service per replica if you want the Active Agent checks to work.
 > **If not defined the pod name will be used.**
+
+## Zabbix 8.0 LTS
+
+By default, this Helm Chart installs Zabbix 7.0 LTS. Until Zabbix 8.0.0 is released, its release candidates are only published with trunk image tags (e.g. `ubuntu-trunk`, `alpine-trunk`), which are rebuilt from the Zabbix development branch every day. This Helm Chart has been tested with Zabbix 8.0.0rc2: new installations with and without [Zabbix Server High Availability](#native-zabbix-server-high-availability), and upgrades from Zabbix 7.0 with and without it.
+
+To use a release candidate, set the image tag of every Zabbix component you enable and pin it by digest, so that all pods run the same build, also after a restart:
+
+```yaml
+zabbixServer:
+  image:
+    tag: alpine-trunk@sha256:<digest of zabbix/zabbix-server-pgsql>
+zabbixAgent:
+  image:
+    tag: alpine-trunk@sha256:<digest of zabbix/zabbix-agent2>
+zabbixWeb:
+  image:
+    tag: alpine-trunk@sha256:<digest of zabbix/zabbix-web-nginx-pgsql>
+# the same for zabbixWebService, zabbixProxy and zabbixJavaGateway, if enabled
+```
+
+Things to consider:
+
+- **Database**: Zabbix 8.0 needs PostgreSQL 15.0-18.x (the default `postgresql.image.tag` 16 works) and, if used, TimescaleDB 2.20.x-2.29.x. See the [requirements](https://www.zabbix.com/documentation/8.0/en/manual/installation/requirements).
+- **Upgrade from Zabbix 7.0**: read the [upgrade notes](https://www.zabbix.com/documentation/8.0/en/manual/installation/upgrade_notes_800) first. The database schema is upgraded directly from 7.0 to 8.0. Without High Availability, Zabbix Server does this when it starts, with High Availability the *db-create-upgrade-job* does it. If you use TimescaleDB, configure the new `history_json` hypertable by hand. The only way back to 7.0 is a backup of the database taken before the upgrade.
+- **High Availability**: the image tag of the *db-create-upgrade-job* is made of the release in the Zabbix Server image tag and `zabbixServer.zabbixServerHA.dbCreateUpgradeJob.image.tagSuffix` (e.g. `7.0-<tagSuffix>`). Trunk image tags have no release in them, so set `zabbixServer.zabbixServerHA.dbCreateUpgradeJob.image.tag`. The job creates and upgrades the database schema with the `zabbix_server` binary of its own image, because Zabbix Server in HA mode refuses to do it (*cannot perform database upgrade in HA mode*), so the job image must contain the same Zabbix build as the Zabbix Server image. The published job image `8.0-trunk-20261009150714` was built before 8.0.0rc2 and creates database version 7050195, while Zabbix Server 8.0.0rc2 needs 7050196 and its pods stop with the message above. Until a job image for the Zabbix 8.0 build you deploy is published, build one from the [job image repository](https://github.com/zabbix-community/helm-zabbix-image-db-init-upgrade-job) on top of the alpine Zabbix Server image of that build (the job image is alpine based, also when the Zabbix Server pods use ubuntu images), and set `zabbixServer.zabbixServerHA.dbCreateUpgradeJob.image.repository` and `zabbixServer.zabbixServerHA.dbCreateUpgradeJob.image.tag` to it:
+
+  ```bash
+  git clone https://github.com/zabbix-community/helm-zabbix-image-db-init-upgrade-job
+  cd helm-zabbix-image-db-init-upgrade-job
+  docker build \
+    --build-arg MAJOR_VERSION=8.0 \
+    --build-arg BASE_IMAGE=zabbix/zabbix-server-pgsql:alpine-trunk@sha256:<digest> \
+    -t <your registry>/zabbix-server-create-upgrade-db:<your tag> .
+  ```
+
+  The same applies to Zabbix 8.0.0 and newer until job images for 8.0 are published, as there is no 8.0 job image with the default `tagSuffix`. The *HA Labels sidecar* works unchanged with Zabbix 8.0.
+- **Zabbix Java Gateway**: `zabbixJavaGateway.ZBX_SERVER` lists the hosts allowed to connect. If it is empty, 8.0 gateways allow only `127.0.0.1,::1`, which rejects Zabbix Server and Proxy pods, and 6.0, 7.0 and 7.4 images built since mid-2026 allow any host. Older images ignore it and accept any host. The default `0.0.0.0/0,::/0` lets any client that reaches port 10052 use the gateway: set it to your cluster's pod CIDR or add a NetworkPolicy, and do not expose the gateway Service as `NodePort` or `LoadBalancer` with this default.
+- **Environment variables**: Zabbix 8.0 images put the `ZBX_*` environment variables into the configuration files as they are. A variable that is set but empty is no longer ignored and can stop the component from starting. An empty `zabbixJavaGateway.ZBX_STARTJAVAPOLLERS` fails the Zabbix Server config check of 8.0 and current 7.4 images, so it now defaults to 5 (7.0 images use 5 when it is empty). Check the variables you set with `extraEnv`. `ZBX_JAVAGATEWAY_ENABLE` is no longer used.
+- **Zabbix Proxy**: Zabbix Proxy 8.0.0rc2 stops right after starting when `DebugLevel` is 4, which is the default of `zabbixProxy.ZBX_DEBUGLEVEL` in this Helm Chart. Set it to 3 when testing 8.0.0rc2.
